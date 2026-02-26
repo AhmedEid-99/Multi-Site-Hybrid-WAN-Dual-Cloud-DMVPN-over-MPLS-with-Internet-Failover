@@ -78,10 +78,43 @@ For branches with only one physical Internet line, the MPLS link is used to borr
 
 ---
 
-- Conditional NAT/PAT: Configured at the WAN edge to translate internal private addressing to public-routable IP addresses.
+## 🏗️ Part 2: LAN Design & High Availability
 
-- NAT Exemption (ACL Logic): A refined Access Control List is used to "deny" NAT for any traffic destined for internal private network blocks (RFC 1918). This prevents the router from translating IP addresses when sending data over the DMVPN or MPLS tunnels.
+The LAN follows Cisco’s Hierarchical Design Principles to ensure deterministic traffic flows and rapid convergence.
 
-- Internet Translation: The ACL "permits" all other traffic, allowing standard PAT for any traffic destined for the public Internet.
+---
+### 2.1 Multi-Tier Topology
 
-- Security: Refined ACLs ensure that only authorized internal subnets can initiate a NAT translation, reducing th
+- HQ Campus: Traditional 3-Tier Design (Access, Distribution, Core).
+- HQ Data Center: 3-Tier Routed Access design to move the L3 boundary closer to servers, reducing the STP domain.
+- Branch Offices: Collapsed Core design to optimize costs while maintaining performance.
+
+---
+
+### 2.2 Layer 2 Optimization & Management
+
+- VTPv3: Provides rigid control via a Primary Server to synchronize the VLAN database and MST configurations.
+- MST (Multiple Spanning Tree): Maps multiple VLANs into specific instances to load balance traffic across uplinks.
+- DTP & EtherChannel: Dynamic trunking (DTP) and link aggregation (LACP/PAgP) are used for simplified deployment and bandwidth scaling.
+
+---
+
+### 2.3 Layer 3 Gateway & Conditional NAT
+
+- FHRP (HSRP & VRRP): Deployed for gateway redundancy with tuned priorities for Active/Active load balancing.
+
+#### NAT Exemption (ACL Logic):
+
+- Deny: Traffic destined for internal private blocks (RFC 1918) is excluded from NAT to allow seamless VPN/MPLS routing.
+- Permit: All other traffic is translated via PAT for public Internet access.
+- Security: Refined ACLs ensure only authorized internal subnets can initiate NAT translations.
+---
+
+## 📊 Technical Stack Summary
+
+| Layer | Technologies Used |
+|------|-------------------|
+| WAN | DMVPN Phase 3, IKEv2, IP SLA, Floating Static Routes, OSPF/EIGRP Redistribution |
+| LAN L2 | MST, VTPv3 (Primary Server), DTP, LACP/PAgP |
+| LAN L3 | HSRP, VRRP, NAT/PAT with ACL Exemption |
+| Architecture | 3-Tier Campus, Routed Access (DC), Collapsed Core (Branch) |
